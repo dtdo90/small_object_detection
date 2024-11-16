@@ -1,14 +1,11 @@
 import cv2
 import time
+import torch
+
 import numpy as np
 from ultralytics import YOLO
 import onnxruntime as ort
 from utils import VisTrack
-
-import cv2
-import time
-import torch
-import numpy as np
 from ultralytics import YOLO
 
 
