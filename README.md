@@ -1,6 +1,6 @@
 
-## RT-DERT L
-### Download trained model for RT-DETR
+## RT-DERT models
+### Download trained model for RT-DETR L
 https://drive.google.com/file/d/1v8MLllwiHPgyPFujrn_5q4-jj7nln77P/view?usp=drive_link
 ### Custom train RT-DETR v2
 Download VisDrone train+ validation images from https://github.com/VisDrone/VisDrone-Dataset. 
