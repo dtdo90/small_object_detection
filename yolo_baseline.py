@@ -1,11 +1,15 @@
 import cv2
 import time
-import torch
-
 import numpy as np
 from ultralytics import YOLO
 import onnxruntime as ort
 from utils import VisTrack
+
+import cv2
+import time
+import torch
+import numpy as np
+from ultralytics import YOLO
 
 
 class InferenceBaseline:
@@ -23,6 +27,26 @@ class InferenceBaseline:
             "8": "bus",
             "9": "motor"
         }
+
+    def inference_image(self,weights,source):
+        # load model
+        if self.detection_model is None:
+            self.detection_model=YOLO(weights)
+            self.detection_model.to("mps")
+            self.detection_model.fuse()  # Fuse Conv2d + BatchNorm2d layers
+            print(f"Model loaded! Device {self.detection_model.device}")
+        # read image
+        image=cv2.imread(source)
+        with torch.no_grad():  # Disable gradient calculation
+            results = self.detection_model(image,conf=0.35)
+
+        results=results[0] # take out batch dimension
+        bboxes=results.boxes.xyxy.cpu().numpy()
+        ids=results.boxes.cls.cpu().numpy().astype(int)
+        scores=results.boxes.conf.cpu().numpy() 
+
+        image=VisTrack().draw_bounding_boxes(image,bboxes,ids,self.names,scores)  
+        cv2.imwrite(source[:-4]+"_yolo.png",image)
 
 
     def process_frame(self,frames):
@@ -152,8 +176,10 @@ class InferenceBaseline:
 
 
 if __name__=="__main__":
-    onnxinference=InferenceBaseline()
-    onnxinference.inference_video(
-        weights="models/best_11m.pt", 
-        source=1,
-        buffer_size=2)
+    inference=InferenceBaseline()
+    # inference.inference_video(
+    #     weights="models/best_11m.pt", 
+    #     source=1,
+    #     buffer_size=2)
+    inference.inference_image(weights="models/best_11m.pt",
+                            source="images/capture_frame.jpg")
