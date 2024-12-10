@@ -6,7 +6,6 @@ import numpy as np
 from ultralytics import YOLO
 import onnxruntime as ort
 from utils import VisTrack
-from ultralytics import YOLO
 
 
 class InferenceBaseline:
