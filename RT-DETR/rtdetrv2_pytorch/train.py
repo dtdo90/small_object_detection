@@ -201,6 +201,7 @@ def evaluate(model, loader, processor, threshold, device):
         evaluator.update(preds=preds_for_evaluator, target=targets_for_evaluator)
 
     # Compute final metrics
+    print("Computing map ...")
     metrics = evaluator.compute()
     mAP50 = metrics["map_50"].item()
     mAP50_95 = metrics["map"].item()
