@@ -12,4 +12,4 @@ https://drive.google.com/file/d/1p8XjyBqHfXXQFjQHhIMbljrS_HNx9lqV/view?usp=shari
 2. Download VisDrone train + validation data from https://github.com/VisDrone/VisDrone-Dataset.
 Put them under RT-DETR/rtdetrv2_pytorch/dataset/visdrone/train and RT-DETR/rtdetrv2_pytorch/dataset/visdrone/val
 3. Get json files in coco format by running **write_json.py**
-4. Train with **train.py**
+4. Train with **train.py**. Optionally, play with **rtdetrv2_custom_train.ipynb**, but the training in this file is not optimized.
