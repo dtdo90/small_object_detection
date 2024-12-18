@@ -1,0 +1,3 @@
+models/rtdetr_l_413.pt
+models/yolo_11m.pt
+experiments/yolo_baseline.mov
