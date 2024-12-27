@@ -313,7 +313,7 @@ def main():
     device="cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu" 
     model.to(device) # move model to device
 
-    num_epochs=2 
+    num_epochs=10
     train_loader, val_loader= load_data(json_train=args.json_train, json_val=args.json_val)
     optimizer = torch.optim.AdamW(model.parameters(),lr=0.0005) 
     criterion=cfg.criterion 
