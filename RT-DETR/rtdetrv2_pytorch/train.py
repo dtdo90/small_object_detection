@@ -42,9 +42,9 @@ def load_pretrained_model(config_path,resume_path):
     # Create a new state dictionary to store matched weights
     matched_weights = {}
 
-        # Loop through all layers in the model
+    # Loop through all layers in the model
     for model_key, model_param in state_dict_model.items():
-        # Try to find a matching key in the state_dict
+        # Try to find a matching key in state_dict_pretrained
         matched_key = None
         for state_key in state_dict_pretrained.keys():
             # Check if the state_dict key is a substring of the model key
@@ -55,7 +55,6 @@ def load_pretrained_model(config_path,resume_path):
         # If a matching key is found and shapes match, load the weight
         if matched_key is not None:
             state_weight = state_dict_pretrained[matched_key]
-
             # Ensure the shapes match exactly
             if state_weight.shape == model_param.shape:
                 matched_weights[model_key] = state_weight
@@ -326,9 +325,20 @@ def main():
     threshold=0.01
     warmup_steps=0.2*len(train_loader)*num_epochs # 20% warmup
     # train
-    train_and_evaluate(
+    best_model_state_dict, best_map50=train_and_evaluate(
     model, num_epochs, train_loader, val_loader, optimizer, criterion, max_norm, device, 
     processor, threshold, warmup_steps)
+    
+    # save model dictionary and optimizer
+    print("Training complete! Saving the best model ...")
+    torch.save({
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+    },
+    "model_and_optimizer.pth"
+    )
+
+    print(f"Model saved! Best map50: {best_map50}")
 
 if __name__=="__main__":
     main()
