@@ -7,6 +7,9 @@ from tqdm import tqdm
 from transformers import AutoImageProcessor
 from utils import load_data, load_pretrained_model, evaluate
 
+import os
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64"
+
 
 def choose_optimizer(model,matched_weights,warmup=False):
     """ Choose optimizer based on the warmup state"""
@@ -191,26 +194,31 @@ def train_and_evaluate(
         train_losses.append(loss_epoch)
 
         # Validation
-        map50, map50_95 = evaluate(
-            model,
-            val_loader,
-            processor=processor,
-            threshold=threshold,
-            device=device
-        )
-        val_map50s.append(map50)
+        if epoch%5==0:
+            map50, map50_95 = evaluate(
+                model,
+                val_loader,
+                processor=processor,
+                threshold=threshold,
+                device=device
+            )
+            val_map50s.append(map50)
 
-        # Update and save the best model + optimizer
-        if map50 > best_map50:
-            best_map50 = map50
-            best_model_state_dict = model.state_dict()
-            print("Saving the best model ...")
-            torch.save(best_model_state_dict,"best.pth")
-
-        # Print detailed training information
-        print(f"\nEpoch {epoch + 1}/{num_epochs}")
-        print(f"Train_loss: {loss_epoch:.4f} | val_map50: {map50:.4f} | val_map50_95: {map50_95:.4f}\n")
-        print(50*"-")
+            # Update and save the best model + optimizer
+            if map50 > best_map50:
+                best_map50 = map50
+                best_model_state_dict = model.state_dict()
+                print("Saving the best model ...")
+                torch.save(best_model_state_dict,"best.pth")
+            # Print detailed training information
+            print(f"\nEpoch {epoch + 1}/{num_epochs}")
+            print(f"Train_loss: {loss_epoch:.4f} | val_map50: {map50:.4f} | val_map50_95: {map50_95:.4f}\n")
+            print(50*"-")
+        else:
+            # Print detailed training information
+            print(f"\nEpoch {epoch + 1}/{num_epochs}")
+            print(f"Train_loss: {loss_epoch:.4f}\n")
+            print(50*"-")
     return best_model_state_dict, best_map50
 
 

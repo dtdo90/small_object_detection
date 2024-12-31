@@ -24,8 +24,7 @@ def load_data(json_train, json_val, test_mode=False):
     
     # define train and validation transformations
     train_transform = A.Compose(
-        [A.HorizontalFlip(p=0.5),
-        A.ShiftScaleRotate(shift_limit=0.1,
+        [A.ShiftScaleRotate(shift_limit=0.1,
                            scale_limit=0.5,
                             rotate_limit=0,
                             p=0.5),
