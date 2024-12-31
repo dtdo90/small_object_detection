@@ -1,10 +1,9 @@
 from IPython.display import HTML
-from base64 import b64encode
 
 from PIL import Image, ImageDraw, ImageFont
 import seaborn as sns
 import numpy as np
-import os
+
 
 # manage and display colored bounding boxes on images, 
 # typically for tracked objects in tasks such as object detection or tracking
@@ -75,3 +74,4 @@ class VisTrack:
             draw.text((bbox[0], bbox[1]), text, fill=(0, 0, 0), font=font)
 
         return np.array(im)
+    
