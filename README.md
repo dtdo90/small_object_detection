@@ -15,6 +15,6 @@ Run inference from **yolo_baseline.py**, or **rtdetr_baseline.py**, or **sahi_ba
 3. Download VisDrone train + validation data from https://github.com/VisDrone/VisDrone-Dataset.
 Put them under RT-DETR/rtdetrv2_pytorch/dataset/visdrone/train and RT-DETR/rtdetrv2_pytorch/dataset/visdrone/val
 4. Get json files in coco format by running **write_json.py** (This step is optional. I already run and put it in the folder)
-5. Train with **train.py** or **finetune.py**.
+5. Train with **finetune.py**.
 
 **Remark**: I can only train for 3 epochs on google colab and run out of memmory. So I'm not sure if the training parameters are good.
