@@ -1,28 +1,28 @@
 # dataset
-import torch, os, yaml,cv2
+import torch, os
 from PIL import Image
-import torchvision
 import numpy as np
 import json
 
 import albumentations as A
 
 from torch.utils.data import Dataset
-from albumentations.pytorch import ToTensorV2
 from transformers import AutoImageProcessor
 
-from pycocotools.coco import COCO
-
+from torch.utils.data import DataLoader
 
 class VisDroneData(Dataset):
     def __init__(self,json_path, split, transforms=None):
         # yaml_path= VisDrone yaml file
         super().__init__()
 
-        if split=="train":
-            self.root_dir="/content/drive/MyDrive/rt-detrv2-fine-tune/RT-DETR/rtdetrv2_pytorch/dataset/visdrone/train"
-        elif split=="val":
-            self.root_dir="/content/drive/MyDrive/rt-detrv2-fine-tune/RT-DETR/rtdetrv2_pytorch/dataset/visdrone/val"
+        # Get the current working directory
+        current_working_directory = os.getcwd()
+
+        if split == "train":
+            self.root_dir = os.path.join(current_working_directory, "dataset/visdrone/train")
+        elif split == "val":
+            self.root_dir = os.path.join(current_working_directory, "dataset/visdrone/val")
 
         self.transforms=transforms       # transform for fine tuning
 
@@ -99,7 +99,6 @@ class VisDroneData(Dataset):
         
         # image info: {"id","file_name", "width","height"}
         image_info=self.images_info[image_id]
-        orig_width, orig_height=image_info["width"], image_info["height"]
         # image in PIL format
         image_path=os.path.join(self.root_dir,image_info["file_name"])
         image = Image.open(image_path).convert("RGB")
@@ -133,9 +132,7 @@ class VisDroneData(Dataset):
                 bboxes=boxes_pascal.numpy(),
                 category=labels.numpy()
             )
-            # Check the keys in the transformed dictionary
-            # print(transformed.keys())  # Debug: print available keys
-            # convert back to tensors
+
             bboxes=transformed['bboxes']
             categories=transformed['category']
         
@@ -148,8 +145,7 @@ class VisDroneData(Dataset):
             return_tensors="pt",   
         ) # dict with keys "pixel_values" + "labels", labels = dict {'size', 'image_id', 'class_labels', 'boxes', 'area', 'iscrowd', 'orig_size'}
 
-        # rename the keyworld 'class_labels' to 'labels'
-        # Rename 'class_labels' to 'labels' in the nested dictionary
+        # rename the keyworld 'class_labels' to 'labels' in the nested dictionary
         processed_dict = {k: v[0] for k, v in processed.items()}
         
         if 'labels' in processed_dict.keys() and 'class_labels' in processed_dict['labels']:
@@ -173,14 +169,24 @@ if __name__=="__main__":
         ),
     )
 
+    def collate_fn(batch):
+        # Extract pixel values and labels
+        pixel_values = torch.stack([x["pixel_values"] for x in batch])
+        
+        # Prepare labels
+        labels = [x["labels"] for x in batch]
+        
+        return {"x": pixel_values, "labels": labels}
+
     ds_train = VisDroneData(
         json_path="dataset/visdrone/annotations/train_coco.json", 
         split="train", 
         transforms=train_transform)
+    train_loader=DataLoader(ds_train, batch_size=8, collate_fn=collate_fn)
     print("Number of train data: ",len(ds_train))
+    print("Number of batches: ", len(train_loader))
     sample=ds_train[0]
     pixel_values=sample['pixel_values']
     target=sample['labels']
     print(f"Pixel values: {pixel_values.shape}")
     print(f"Target type: {type(target)}")
-    print(target)
