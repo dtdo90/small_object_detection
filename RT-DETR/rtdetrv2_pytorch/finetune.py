@@ -5,16 +5,18 @@ from argparse import Namespace
 from torch.cuda.amp import GradScaler
 from tqdm import tqdm
 from transformers import AutoImageProcessor
-from utils import load_data, load_pretrained_model, evaluate
+from utils import load_data, load_pretrained_model, evaluate,calc_loss_batch,calc_loss_loader
 
 import os
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64"
+
+# pip install pycocotools supervision torchmetrics albumentations pycocotools --upgrade transformers
 
 
 def choose_optimizer(model,matched_weights,warmup=False):
     """ Choose optimizer based on the warmup state"""
     import re
-    if warmup: # optional: to train the new parameters for a few epochs 
+    if warmup: # Optional: to train the new parameters for a few epochs 
         # disable all gradients in the pretrained weights
         for name, param in model.named_parameters():
             if name in matched_weights:
@@ -66,26 +68,23 @@ def choose_optimizer(model,matched_weights,warmup=False):
         # Create step-based schedulers
         backbone_scheduler = torch.optim.lr_scheduler.MultiStepLR(
             backbone_optimizer,
-            milestones=[4000],  # Will reduce lr at step 2000
+            milestones=[1000],  # Will reduce lr at step 1000
             gamma=0.1
         )
         
         encoder_decoder_scheduler = torch.optim.lr_scheduler.MultiStepLR(
             encoder_decoder_optimizer,
-            milestones=[4000],  # Will reduce lr at step 2000
+            milestones=[1000],  # Will reduce lr at step 1000
             gamma=0.1
         )
         return backbone_optimizer, backbone_scheduler, encoder_decoder_optimizer, encoder_decoder_scheduler
-
-
 
 
 def train_and_evaluate(
     args, num_epochs, # num_epochs_warmup trains only the new params
     train_loader, val_loader, max_norm, device, 
     processor, threshold, # for evaluation
-    warmup_duration=1000,  # learning rate warmup
-    amp=True, # allow mixed precision for faster training
+    warmup_duration=2000,  # learning rate warmup
     scaler=GradScaler(enabled=True) # use gradscaler in conjuction with amp
     ):
     """ Train with linear lr warmup and lr scheduler"""
@@ -102,12 +101,17 @@ def train_and_evaluate(
     train_losses, val_map50s, track_lrs=[], [], []
     global_step=-1
 
-    epoch_count=0
-
     # unfreeze all weights
     backbone_optimizer, backbone_scheduler, encoder_decoder_optimizer, encoder_decoder_scheduler=choose_optimizer(
         model=model,matched_weights=matched_weights,warmup=False
     )
+
+    # compute initial map metrics
+    map50, map50_95 = evaluate(model,val_loader,processor,threshold,device)
+    print(f"Initial map50 : {map50}\n")
+    torch.cuda.empty_cache()  # Clear memory after initial evaluation
+
+    # start training
     for epoch in range(num_epochs):
         model.train()
         loss_epoch=0
@@ -149,23 +153,12 @@ def train_and_evaluate(
                 'encoder_decoder': encoder_decoder_optimizer.param_groups[0]["lr"]
             })
 
-            # Process batch
-            batch_images = batch["pixel_values"].to(device, dtype=torch.float32, non_blocking=True)
-            batch_targets = [{k: v.to(device) for k, v in t.items()} for t in batch["labels"]]
-
              # Zero gradients before forward pass
             backbone_optimizer.zero_grad()
             encoder_decoder_optimizer.zero_grad()
 
-            # Forward pass with mixed precision
-            with torch.autocast(device_type=device, cache_enabled=True):
-                outputs = model(batch_images, batch_targets)
-            with torch.autocast(device_type=device, cache_enabled=False):
-                loss_dict = criterion(outputs, batch_targets)
-            
-            loss = sum(loss_dict.values())
-            
-            # Backward pass with scaling
+            # compute loss and backward
+            loss=calc_loss_batch(model,batch,criterion,device)            
             scaler.scale(loss).backward()
 
             # Gradient clipping
@@ -194,7 +187,8 @@ def train_and_evaluate(
         train_losses.append(loss_epoch)
 
         # Validation
-        if epoch%5==0:
+        if (epoch+1)%5==0:
+            loss_val=calc_loss_loader(model,val_loader,criterion,device)
             map50, map50_95 = evaluate(
                 model,
                 val_loader,
@@ -212,8 +206,10 @@ def train_and_evaluate(
                 torch.save(best_model_state_dict,"best.pth")
             # Print detailed training information
             print(f"\nEpoch {epoch + 1}/{num_epochs}")
-            print(f"Train_loss: {loss_epoch:.4f} | val_map50: {map50:.4f} | val_map50_95: {map50_95:.4f}\n")
+            print(f"train_loss: {loss_epoch:.4f} | val_loss: {loss_val:.4f} |val_map50: {map50:.4f} | val_map50_95: {map50_95:.4f}\n")
             print(50*"-")
+            # Clear memory after validation
+            torch.cuda.empty_cache()
         else:
             # Print detailed training information
             print(f"\nEpoch {epoch + 1}/{num_epochs}")

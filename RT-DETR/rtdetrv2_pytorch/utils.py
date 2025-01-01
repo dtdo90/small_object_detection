@@ -171,6 +171,7 @@ def evaluate(model, loader, processor, threshold, device):
                 "labels": labels
             })
 
+
         # (2) Compute predictions and post-process them
         with torch.no_grad():
             preds = model(images)
@@ -210,6 +211,36 @@ def evaluate(model, loader, processor, threshold, device):
 
     #print(f"mAP@50: {mAP50:.4f}, mAP@50-95: {mAP50_95:.4f}")
     return mAP50, mAP50_95
+
+
+# calculate loss per batch
+def calc_loss_batch(model, batch, criterion, device):
+    # Process batch
+    batch_images = batch["pixel_values"].to(device, dtype=torch.float32, non_blocking=True)
+    batch_targets = [{k: v.to(device) for k, v in t.items()} for t in batch["labels"]]
+
+    # Forward pass with mixed precision
+    with torch.autocast(device_type=device, cache_enabled=True):
+        outputs = model(batch_images, batch_targets)
+    with torch.autocast(device_type=device, cache_enabled=False):
+        loss_dict = criterion(outputs, batch_targets)
+    
+    loss = sum(loss_dict.values())
+    return loss
+
+def calc_loss_loader(model, loader, criterion, device):
+    model.eval()
+    loss_epoch=0
+    progress_bar=tqdm(loader, desc="Validating",leave =True)  
+    for _,batch in enumerate(progress_bar):
+        loss=calc_loss_batch(model,batch,criterion,device)
+        loss_epoch+=loss
+        progress_bar.set_postfix({
+            "val_loss": loss.item(),
+        })
+
+    progress_bar.close()
+    return loss_epoch/len(loader)
 
 
 if __name__=="__main__":
