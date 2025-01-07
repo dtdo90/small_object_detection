@@ -1,0 +1,7 @@
+ultralytics
+tensorrt
+tensorrt_lean
+tensorrt_dispatch
+onnx
+onnxsim
+onnxruntime-gpu
