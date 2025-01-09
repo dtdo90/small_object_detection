@@ -17,5 +17,5 @@ Put them under RT-DETR/rtdetrv2_pytorch/dataset/visdrone/train and RT-DETR/rtdet
 4. Get json files in coco format by running **write_json.py** (This step is optional. I already run and put it in the folder)
 5. Train with **finetune.py** which follows **optimizer.yaml** from the original paper.
 
-**Remark:** I tried to replicate the training regime from the original paper. However, it seems not optimal because the datasets are different.
+**Remark:** I tried to replicate the training regime using hyper-parameters from the original paper. However, it seems not optimal because the datasets are different.
 
