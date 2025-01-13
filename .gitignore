@@ -1,3 +1,9 @@
-models/rtdetr_l_413.pt
-models/yolo_11m.pt
-experiments/yolo_baseline.mov
+models/*
+experiments/*
+inference/rtdetr_baseline.py
+inference/sahi_baseline.py
+inference/yolo_baseline.py
+inference/inference.py
+rtdetrv2_custom_train.ipynb
+RT-DETR/rtdetrv2_pytorch/fine_tune.py
+deploy/*
