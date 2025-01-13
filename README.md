@@ -20,6 +20,7 @@ Put them under RT-DETR/rtdetrv2_pytorch/dataset/visdrone/train and RT-DETR/rtdet
 **Remark:** I tried to replicate the training regime using hyper-parameters from the original paper. However, it seems not optimal because the datasets are different.
 
 ### Output by RTDETR
+Below is an example on input image and output by RT-DETR
 ![Alt text](data_test/capture_frame.jpg)
 ![Alt text](data_test/capture_frame_processed.png)
 
