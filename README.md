@@ -21,6 +21,6 @@ Put them under RT-DETR/rtdetrv2_pytorch/dataset/visdrone/train and RT-DETR/rtdet
 
 ### Output by RTDETR
 Below is an example on input image and output by RT-DETR
-![Alt text](data_test/capture_frame.jpg)
-![Alt text](data_test/capture_frame_processed.png)
+![Alt text](experiments_test/capture_frame.jpg)
+![Alt text](experiments_test/capture_frame_processed.png)
 

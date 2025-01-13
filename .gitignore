@@ -7,4 +7,5 @@ inference/inference.py
 rtdetrv2_custom_train.ipynb
 RT-DETR/rtdetrv2_pytorch/fine_tune.py
 deploy/*
-data_test/
+experiments_test/*
+
